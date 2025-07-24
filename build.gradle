@@ -1,19 +1,36 @@
-plugins {
-    id 'java'
-}
+import groovy.json.*
 
-group = 'myplugin'
-version = '1.0'
+apply plugin: "java"
 
 repositories {
     mavenCentral()
     maven { url 'https://jitpack.io' }
 }
 
-dependencies {
-    implementation 'com.github.Anuken.Mindustry:core:release'
-    implementation 'com.github.Anuken.Mindustry:server:release'
+ext {
+    mindustryVersion = 'v126.2'
+
+    config = {
+        def configFile = file("$rootDir/src/main/resources/plugin.json")
+        return new JsonSlurper().parseText(configFile.text)
+    }
 }
 
-sourceCompatibility = JavaVersion.VERSION_1_8
-targetCompatibility = JavaVersion.VERSION_1_8
+tasks.withType(JavaCompile){
+    targetCompatibility = 8
+    sourceCompatibility = 14
+
+    if(JavaVersion.current() != JavaVersion.VERSION_1_8){
+        options.compilerArgs += ['--release', '8']
+    }
+}
+
+dependencies {
+    compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
+    compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
+}
+
+jar {
+    archiveFileName = "${project.config.name}.jar"
+    from configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+}
